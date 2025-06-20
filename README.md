@@ -4,9 +4,9 @@ Futurehome has recently introduced a subscription model. According to their webs
 
 https://support.futurehome.no/hc/no/articles/28158944965277-FAQ-Abonnement?utm_source=brevo&utm_campaign=Oppdatering%20med%20FAQ&utm_medium=email&utm_id=22
 
-This guide is focused solely on one thing: extracting and reusing Z-Wave devices that are already paired with a Futurehome hub (v1/CUBE-1V0). The goal is to avoid resetting, unpairing, and re-pairing the Z-Wave devices from scratch.
-It’s not entirely clear whether the S0 key is required to reconnect the devices, but instructions for extracting it are included to avoid disrupting the existing Z-Wave network.
-Zigbee, WiFi, or other types of Futurehome-specific integrations are not covered by this guide.
+This guide is focused on one thing: reusing the Z-Wave network that are on the Futurehome hub (v1/CUBE-1V0) in Z-Wave JS UI so it can be connected to for example Home Assistant. The goal is to avoid unpairing, and re-pairing the Z-Wave devices. Zigbee, WiFi, or other types of Futurehome-specific integrations are not covered by this guide. Some knowledge of Linux is requred.
+
+Use at your own risk. This guide/script is provided "as is", without any warranty. I am not responsible for any damage, data loss, or issues that may result from using this. Please make sure you understand the steps and adapt them to your specific setup before proceeding.
 
 ## Equipment Used
 
@@ -70,7 +70,7 @@ sudo mount /dev/sda2 /mnt/rpi
 
 Before modifying anything, create a full disk image backup of the hub. Make sure you have the correct device path before executing the command (use lsblk).
 
-Alternatively you can make the backup after you have root access via SSH. I think it is important to make a backup if Futurehome tries to update the hub to make it impossible to use locally without a subscription. 
+Alternatively you can make the backup after you have root access via SSH. Creating a backup is advised, as future updates from Futurehome may revoke root access to the hub, making it impossible to install or run ser2net or similar tools locally. 
 
 ```bash
 sudo dd if=/dev/sda of=~/futurehome_backup_$(date +%Y%m%d_%H%M%S).img bs=4M status=progress
@@ -143,7 +143,7 @@ Please note that Dan333 on the Home Assistant forums did all the work, I just fo
 
 You’ll set up `ser2net`, a fallback loop to manage serial port exposure, a web-based control server, and a systemd service to manage it at boot. This part also exposes Z/IP ports used by Silicon Labs tools.
 
-When you are connected to the hub wia SSH create the script with nano:
+When you are connected to the hub via SSH create the script with nano:
 
 ```bash
 nano install_ser2net.sh
@@ -336,33 +336,16 @@ sed -i '/^[[:space:]]*exit 0/i ip6tables -t nat -A PREROUTING -p udp --dport 422
 sed -i '/^[[:space:]]*exit 0/i ip6tables -I INPUT -p udp --dport 42242 -j ACCEPT' /etc/rc.local
 ```
 
-
-### Save and Exit
-
-- Press `Ctrl + O` to save  
-- Press `Enter` to confirm  
-- Press `Ctrl + X` to exit nano
-
-### Make It Executable
+### Make it executable and run it
 
 ```bash
 chmod +x install_ser2net.sh
-```
-
-### Run the Script
-
-```bash
 sudo ./install_ser2net.sh
 ```
 
 ---
 
 ## 8. Extract the Zwave keys (Run on the Windows machine) 
-
-1. On your Windows machine, use HW Virtual Serial Port to connect to the hub on port 3333.
-2. Install Silicon Labs Simplicity Studio and the Z-Wave PC Controller tool.
-3. Connect to the COM port, click the shield icon, and copy out all the network keys (including S0).
-
 
 First, open a web browser and go to:
 
@@ -372,7 +355,7 @@ http://IP_ADDRESS_OF_FUTUREHOME:8888/status
 
 Here, ensure that Autostart is set to `yes` and that `ser2net` is active.
 
-The next step is to extract the S0 security key. It may not be required, but it’s a precaution. Attempting to connect without the correct key may corrupt your entire Z-Wave network.
+The next step is to extract the S0 security key. It may not be required, but it’s a precaution. Attempting to connect without the correct key may corrupt your Z-Wave network.
 
 ---
 
@@ -401,8 +384,6 @@ Download Simplicity Studio:
 
  https://www.silabs.com/developer-tools/z-wave-controller?tab=downloads
 
-
-
 Inside the app (this app is a pain to navigate):
 
 - Click **Install**
@@ -421,10 +402,10 @@ After installation, go to **Tools** and launch **Z-Wave PC Controller**.
 Once Z-Wave PC Controller launches:
 
 - It should detect COM7 automatically (or the port you selected )
-- It will scan COM7 for a while
+- It will scan the port for a while
 - In the top-right corner of the app, locate the shield icon (similar to the Windows Defender logo)
 
-Click the shield icon. This will display all security keys, including:
+Click the shield icon. This will display all security keys.
 
 Copy and save all these keys. You will need them later when setting up Z-Wave JS.
 
@@ -441,7 +422,7 @@ Once finished:
 
 Open Z-Wave JS UI in your browser.
 
-In the setup:
+In settings under z-wave:
 
 - Set serial port to:
   ```
@@ -453,7 +434,7 @@ In the setup:
 
 Once everything was configured, all my devices appeared automatically. It took some time for product names to populate, but the next day everything was correct. I then renamed devices and assigned rooms in Z-Wave JS UI, and connected it to Home Assistant — where name and area carried over correctly.
 
---
+---
 
 # 10. Block internet access to the hub
 I blocked both inbound and outbound internet traffic for the Futurehome hub on my router to prevent it from receiving updates from Futurehome.
