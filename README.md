@@ -10,10 +10,10 @@ Use at your own risk. This guide/script is provided "as is", without any warrant
 
 ## Equipment Used
 
-- A Linux machine  
+- A Linux machine (debian based) 
 - A Windows machine  
 - A micro-USB cable  
-- A Raspberry Pi running Z-Wave JS UI
+- A Raspberry Pi for running Z-Wave JS UI
 - A Futurehome hub v1
 
 I followed this guide as a base:  
